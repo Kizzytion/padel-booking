@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padel Booking System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .calculate-btn {
+            background: #3498db;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .calculate-btn:hover {
+            background: #2980b9;
+        }
+        
+        .results {
+            background: #e8f5e8;
+            border: 2px solid #27ae60;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .results h3 {
+            color: #27ae60;
+            margin-top: 0;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #d5f3d5;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .booking-log {
+            margin-top: 30px;
+        }
+        
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .log-table th,
+        .log-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .log-table th {
+            background-color: #34495e;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .log-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .log-table tr:hover {
+            background-color: #e8f4fd;
+        }
+        
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+        
+        .manage-dept-btn {
+            background: #9b59b6;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+        
+        .manage-dept-btn:hover {
+            background: #8e44ad;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        .dept-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 15px 0;
+        }
+        
+        .dept-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .dept-item:last-child {
+            border-bottom: none;
+        }
+        
+        .delete-dept-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .delete-dept-btn:hover {
+            background: #c0392b;
+        }
+        
+        .add-dept-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .add-dept-form input {
+            flex: 1;
+        }
+        
+        .add-dept-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .add-dept-btn:hover {
+            background: #229954;
+        }
+        
+        .pricing-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .pricing-info h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+        
+        .time-breakdown {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏸 Padel Booking System</h1>
+        
+        <div class="pricing-info">
+            <h4>Pricing Information</h4>
+            <p><strong>Weekdays:</strong> Low Time: 05:00-16:00 & 23:00-00:00 | High Time: 16:00-23:00</p>
+            <p><strong>Saturday:</strong> Low Time: 05:00-07:00 | High Time: 07:00-18:00</p>
+            <p><strong>Sunday:</strong> Low Time: 05:00-07:00 | High Time: 07:00-23:30</p>
+            <p><strong>Rates:</strong> Low = 60 coins/30min | High = 120 coins/30min</p>
+            <p><strong>Coin Rate:</strong> 12,000 coins = 8,000 DKK (≈0.67 DKK per coin)</p>
+        </div>
+        
+        <div class="form-section">
+            <h3>Book New Session</h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bookingDate">Booking Date:</label>
+                    <input type="date" id="bookingDate" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="startTime">Start Time:</label>
+                    <input type="time" id="startTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="endTime">End Time:</label>
+                    <input type="time" id="endTime" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="players">Number of Players:</label>
+                    <input type="number" id="players" min="4" value="4" required>
+                </div>
+                <div class="form-group">
+                    <label for="department">Department:</label>
+                    <select id="department" required>
+                        <option value="">Select Department</option>
+                    </select>
+                    <button type="button" class="manage-dept-btn" onclick="manageDepartments()">Manage Departments</button>
+                </div>
+            </div>
+            
+            <button class="calculate-btn" onclick="calculateBooking()">Calculate & Add Booking</button>
+            
+            <div id="results" class="results" style="display: none;">
+                <h3>Booking Calculation</h3>
+                <div id="timeBreakdown" class="time-breakdown"></div>
+                <div id="resultDetails"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container booking-log">
+        <h3>Booking History</h3>
+        <button class="clear-btn" onclick="clearLog()">Clear All Bookings</button>
+        
+        <table class="log-table" id="bookingTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Duration</th>
+                    <th>Players</th>
+                    <th>Department</th>
+                    <th>Low Time</th>
+                    <th>High Time</th>
+                    <th>Total Coins</th>
+                    <th>Coins/Person</th>
+                    <th>DKK/Person</th>
+                </tr>
+            </thead>
+            <tbody id="bookingBody">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Department Management Modal -->
+    <div id="deptModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDeptModal()">&times;</span>
+            <h2>Manage Departments</h2>
+            
+            <div class="dept-list" id="deptList">
+                <!-- Department items will be populated here -->
+            </div>
+            
+            <div class="add-dept-form">
+                <input type="text" id="newDeptName" placeholder="Enter new department name" maxlength="50">
+                <button class="add-dept-btn" onclick="addDepartment()">Add Department</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store bookings and departments in memory
+        let bookings = [];
+        let departments = ['IT', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations', 'Management'];
+        
+        function loadDepartments() {
+            const deptSelect = document.getElementById('department');
+            deptSelect.innerHTML = '<option value="">Select Department</option>';
+            
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept;
+                option.textContent = dept;
+                deptSelect.appendChild(option);
+            });
+        }
+        
+        function manageDepartments() {
+            updateDeptList();
+            document.getElementById('deptModal').style.display = 'block';
+        }
+        
+        function closeDeptModal() {
+            document.getElementById('deptModal').style.display = 'none';
+        }
+        
+        function updateDeptList() {
+            const deptList = document.getElementById('deptList');
+            deptList.innerHTML = '';
+            
+            departments.forEach((dept, index) => {
+                const deptItem = document.createElement('div');
+                deptItem.className = 'dept-item';
+                deptItem.innerHTML = `
+                    <span>${dept}</span>
+                    <button class="delete-dept-btn" onclick="deleteDepartment(${index})">Delete</button>
+                `;
+                deptList.appendChild(deptItem);
+            });
+        }
+        
+        function addDepartment() {
+            const newDeptName = document.getElementById('newDeptName').value.trim();
+            
+            if (!newDeptName) {
+                alert('Please enter a department name');
+                return;
+            }
+            
+            if (departments.includes(newDeptName)) {
+                alert('Department already exists');
+                return;
+            }
+            
+            departments.push(newDeptName);
+            loadDepartments();
+            updateDeptList();
+            document.getElementById('newDeptName').value = '';
+        }
+        
+        function deleteDepartment(index) {
+            if (confirm(`Are you sure you want to delete "${departments[index]}"?`)) {
+                departments.splice(index, 1);
+                loadDepartments();
+                updateDeptList();
+            }
+        }
+        
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('deptModal');
+            if (event.target == modal) {
+                closeDeptModal();
+            }
+        }
+        
+        // Allow Enter key to add department
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('newDeptName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addDepartment();
+                }
+            });
+        });
+        
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function minutesToTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
+        
+        function getDayOfWeek(dateString) {
+            const date = new Date(dateString);
+            return date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        }
+        
+        function calculateTimeSlots(startTime, endTime, bookingDate) {
+            const startMinutes = timeToMinutes(startTime);
+            const endMinutes = timeToMinutes(endTime);
+            const dayOfWeek = getDayOfWeek(bookingDate);
+            
+            // Handle overnight bookings
+            const totalMinutes = endMinutes > startMinutes ? 
+                endMinutes - startMinutes : 
+                (24 * 60 - startMinutes) + endMinutes;
+            
+            let lowTimeMinutes = 0;
+            let highTimeMinutes = 0;
+            
+            let currentMinutes = startMinutes;
+            let remainingMinutes = totalMinutes;
+            
+            while (remainingMinutes > 0) {
+                const currentHour = Math.floor(currentMinutes / 60);
+                
+                let isLowTime;
+                let minutesToNextBoundary;
+                
+                if (dayOfWeek === 6) { // Saturday
+                    // Saturday: Low 05:00-07:00, High 07:00-18:00
+                    isLowTime = (currentHour >= 5 && currentHour < 7);
+                    
+                    if (currentHour >= 5 && currentHour < 7) {
+                        // In low time, next boundary is 07:00
+                        minutesToNextBoundary = (7 * 60) - currentMinutes;
+                    } else if (currentHour >= 7 && currentHour < 18) {
+                        // In high time, next boundary is 18:00
+                        minutesToNextBoundary = (18 * 60) - currentMinutes;
+                    } else if (currentHour >= 18) {
+                        // After 18:00 on Saturday (closed or treat as high time)
+                        minutesToNextBoundary = (24 * 60) - currentMinutes;
+                        isLowTime = false; // Treat as high time if still open
+                    } else {
+                        // Before 05:00 (closed)
+                        minutesToNextBoundary = (5 * 60) - currentMinutes;
+                        isLowTime = true; // Default to low
+                    }
+                    
+                } else if (dayOfWeek === 0) { // Sunday
+                    // Sunday: Low 05:00-07:00, High 07:00-23:30
+                    isLowTime = (currentHour >= 5 && currentHour < 7);
+                    
+                    if (currentHour >= 5 && currentHour < 7) {
+                        // In low time, next boundary is 07:00
+                        minutesToNextBoundary = (7 * 60) - currentMinutes;
+                    } else if (currentHour >= 7 && (currentHour < 23 || (currentHour === 23 && currentMinutes < 30))) {
+                        // In high time, next boundary is 23:30
+                        minutesToNextBoundary = (23 * 60 + 30) - currentMinutes;
+                    } else {
+                        // After 23:30 Sunday or before 05:00 (closed/low time)
+                        if (currentHour >= 23 && currentMinutes >= 30) {
+                            minutesToNextBoundary = (24 * 60) - currentMinutes;
+                        } else {
+                            minutesToNextBoundary = (5 * 60) - currentMinutes;
+                        }
+                        isLowTime = true;
+                    }
+                    
+                } else { // Weekdays (Monday-Friday)
+                    // Weekdays: Low 05:00-16:00 & 23:00-00:00, High 16:00-23:00
+                    isLowTime = (currentHour >= 5 && currentHour < 16) || (currentHour >= 23);
+                    
+                    if (currentHour >= 5 && currentHour < 16) {
+                        // In morning low time, next boundary is 16:00
+                        minutesToNextBoundary = (16 * 60) - currentMinutes;
+                    } else if (currentHour >= 16 && currentHour < 23) {
+                        // In high time, next boundary is 23:00
+                        minutesToNextBoundary = (23 * 60) - currentMinutes;
+                    } else if (currentHour >= 23) {
+                        // In evening low time, next boundary is midnight (24:00)
+                        minutesToNextBoundary = (24 * 60) - currentMinutes;
+                    } else {
+                        // Between midnight and 5:00 (closed time, but treat as low for calculation)
+                        minutesToNextBoundary = (5 * 60) - currentMinutes;
+                    }
+                }
+                
+                const minutesInThisSlot = Math.min(remainingMinutes, minutesToNextBoundary);
+                
+                if (isLowTime) {
+                    lowTimeMinutes += minutesInThisSlot;
+                } else {
+                    highTimeMinutes += minutesInThisSlot;
+                }
+                
+                currentMinutes = (currentMinutes + minutesInThisSlot) % (24 * 60);
+                remainingMinutes -= minutesInThisSlot;
+            }
+            
+            return { lowTimeMinutes, highTimeMinutes, totalMinutes };
+        }
+        
+        function calculateBooking() {
+            const bookingDate = document.getElementById('bookingDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const players = parseInt(document.getElementById('players').value);
+            const department = document.getElementById('department').value;
+            
+            if (!bookingDate || !startTime || !endTime || !players || !department) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (players < 4) {
+                alert('Minimum 4 players required');
+                return;
+            }
+            
+            const timeSlots = calculateTimeSlots(startTime, endTime, bookingDate);
+            const dayOfWeek = getDayOfWeek(bookingDate);
+            const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
+            
+            // Calculate coins (60 coins per 30 minutes for low time, 120 for high time)
+            const lowTimeCoins = Math.ceil(timeSlots.lowTimeMinutes / 30) * 60;
+            const highTimeCoins = Math.ceil(timeSlots.highTimeMinutes / 30) * 120;
+            const totalCoins = lowTimeCoins + highTimeCoins;
+            
+            // Calculate cost (12,000 coins = 8,000 DKK)
+            const coinsPerPerson = Math.ceil(totalCoins / players);
+            const dkkPerPerson = (coinsPerPerson * 8000 / 12000).toFixed(2);
+            const totalDKK = (totalCoins * 8000 / 12000).toFixed(2);
+            
+            // Display results
+            const resultsDiv = document.getElementById('results');
+            const timeBreakdownDiv = document.getElementById('timeBreakdown');
+            const resultDetailsDiv = document.getElementById('resultDetails');
+            
+            timeBreakdownDiv.innerHTML = `
+                <h4>Time Breakdown for ${dayName}:</h4>
+                <p><strong>Low Time:</strong> ${timeSlots.lowTimeMinutes} minutes (${(timeSlots.lowTimeMinutes/60).toFixed(1)} hours)</p>
+                <p><strong>High Time:</strong> ${timeSlots.highTimeMinutes} minutes (${(timeSlots.highTimeMinutes/60).toFixed(1)} hours)</p>
+                <p><strong>Total Duration:</strong> ${timeSlots.totalMinutes} minutes (${(timeSlots.totalMinutes/60).toFixed(1)} hours)</p>
+            `;
+            
+            resultDetailsDiv.innerHTML = `
+                <div class="result-item">
+                    <span>Low Time Coins:</span>
+                    <span>${lowTimeCoins} coins</span>
+                </div>
+                <div class="result-item">
+                    <span>High Time Coins:</span>
+                    <span>${highTimeCoins} coins</span>
+                </div>
+                <div class="result-item">
+                    <span>Total Coins Needed:</span>
+                    <span>${totalCoins} coins</span>
+                </div>
+                <div class="result-item">
+                    <span>Coins per Person:</span>
+                    <span>${coinsPerPerson} coins</span>
+                </div>
+                <div class="result-item">
+                    <span>Cost per Person:</span>
+                    <span>${dkkPerPerson} DKK</span>
+                </div>
+                <div class="result-item">
+                    <span>Total Cost:</span>
+                    <span>${totalDKK} DKK</span>
+                </div>
+            `;
+            
+            resultsDiv.style.display = 'block';
+            
+            // Add to booking log
+            const booking = {
+                date: bookingDate,
+                dayName: dayName,
+                time: `${startTime}-${endTime}`,
+                duration: `${(timeSlots.totalMinutes/60).toFixed(1)}h`,
+                players: players,
+                department: department,
+                lowTime: `${(timeSlots.lowTimeMinutes/60).toFixed(1)}h`,
+                highTime: `${(timeSlots.highTimeMinutes/60).toFixed(1)}h`,
+                totalCoins: totalCoins,
+                coinsPerPerson: coinsPerPerson,
+                dkkPerPerson: dkkPerPerson
+            };
+            
+            bookings.push(booking);
+            updateBookingTable();
+            
+            // Reset form except date
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+            document.getElementById('players').value = '4';
+            document.getElementById('department').value = '';
+        }
+        
+        function updateBookingTable() {
+            const tbody = document.getElementById('bookingBody');
+            tbody.innerHTML = '';
+            
+            bookings.forEach(booking => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${booking.date} (${booking.dayName})</td>
+                    <td>${booking.time}</td>
+                    <td>${booking.duration}</td>
+                    <td>${booking.players}</td>
+                    <td>${booking.department}</td>
+                    <td>${booking.lowTime}</td>
+                    <td>${booking.highTime}</td>
+                    <td>${booking.totalCoins}</td>
+                    <td>${booking.coinsPerPerson}</td>
+                    <td>${booking.dkkPerPerson}</td>
+                `;
+            });
+        }
+        
+        function clearLog() {
+            if (confirm('Are you sure you want to clear all booking history?')) {
+                bookings = [];
+                updateBookingTable();
+            }
+        }
+        
+        // Set default times for testing
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load departments first
+            loadDepartments();
+            
+            // Set today's date as default
+            const today = new Date();
+            document.getElementById('bookingDate').value = today.toISOString().split('T')[0];
+            
+            const currentHour = today.getHours();
+            const currentMinute = today.getMinutes();
+            
+            // Round to nearest 30 minutes
+            const roundedMinute = currentMinute < 30 ? '00' : '30';
+            const startHour = currentMinute < 30 ? currentHour : currentHour + 1;
+            
+            document.getElementById('startTime').value = `${startHour.toString().padStart(2, '0')}:${roundedMinute}`;
+            document.getElementById('endTime').value = `${(startHour + 1).toString().padStart(2, '0')}:${roundedMinute}`;
+            
+            // Add Enter key listener for department input
+            document.getElementById('newDeptName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addDepartment();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
