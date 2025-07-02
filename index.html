@@ -189,6 +189,24 @@
             color: #6c757d;
             font-style: italic;
         }
+
+        .airtable-link {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        
+        .airtable-link:hover {
+            background: #45a049;
+            color: white;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
@@ -260,6 +278,7 @@
     <div class="container booking-log">
         <h3>Booking History</h3>
         <div id="loadingMessage" class="loading">Loading booking history...</div>
+        <a href="https://airtable.com/appjUcj8hKuukoGME" target="_blank" class="airtable-link">📊 View Full Database</a>
         
         <table class="log-table" id="bookingTable">
             <thead>
@@ -282,8 +301,10 @@
     </div>
 
     <script>
-        // IMPORTANT: Replace this URL with your actual Google Apps Script web app URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3CueJDdPlt9VUlhCJr7YD6T97CEmOm0da_ZwbbGMyL64nXaEP617ftEFOkq_A7QYz-A/exec';
+        // REPLACE THESE WITH YOUR ACTUAL VALUES
+        const AIRTABLE_BASE_ID = 'appjUcj8hKuukoGME';
+        const AIRTABLE_TOKEN = 'pat3CUItTlB95goYe.68dc59fb63f64c6930a0e49daa9cff09557e4acfd3f985831ee03e2408eb1e20'; // Replace with your actual token
+        const TABLE_NAME = 'Table 1'; // Your table name in Airtable
         
         // Store bookings array
         let bookings = [];
@@ -302,50 +323,94 @@
             btn.textContent = isLoading ? 'Saving...' : 'Calculate & Add Booking';
         }
         
-        async function loadBookingsFromSheet() {
+        async function loadBookingsFromAirtable() {
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL);
+                if (AIRTABLE_TOKEN === 'YOUR_TOKEN_HERE') {
+                    document.getElementById('loadingMessage').textContent = 'Please configure your Airtable token first';
+                    return;
+                }
+                
+                const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}`, {
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
-                if (Array.isArray(data)) {
-                    bookings = data;
-                    updateBookingTable();
-                    document.getElementById('loadingMessage').style.display = 'none';
-                } else {
-                    console.error('Unexpected data format:', data);
-                    document.getElementById('loadingMessage').textContent = 'Error loading booking history';
-                }
+                bookings = data.records.map(record => ({
+                    date: record.fields.Date || '',
+                    day: record.fields.Day || '',
+                    time: record.fields.Time || '',
+                    duration: record.fields.Duration || '',
+                    players: record.fields.Players || 0,
+                    department: record.fields.Department || '',
+                    lowTime: record.fields['Low Time'] || '',
+                    highTime: record.fields['High Time'] || '',
+                    totalCoins: record.fields['Total Coins'] || 0,
+                    coinsPerPerson: record.fields['Coins Per Person'] || 0,
+                    dkkPerPerson: record.fields['DKK Per Person'] || 0
+                }));
+                
+                updateBookingTable();
+                document.getElementById('loadingMessage').style.display = 'none';
+                
             } catch (error) {
                 console.error('Error loading bookings:', error);
-                document.getElementById('loadingMessage').textContent = 'Error loading booking history';
+                document.getElementById('loadingMessage').textContent = 'Error loading booking history. Check console for details.';
             }
         }
         
-        async function saveBookingToSheet(booking) {
+        async function saveBookingToAirtable(booking) {
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(booking)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showStatus('Booking saved successfully!');
-                    // Add to local array and update table
-                    bookings.push(booking);
-                    updateBookingTable();
-                    return true;
-                } else {
-                    showStatus('Error saving booking: ' + (result.error || 'Unknown error'), true);
+                if (AIRTABLE_TOKEN === 'YOUR_TOKEN_HERE') {
+                    showStatus('Please configure your Airtable token first', true);
                     return false;
                 }
+                
+                const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fields: {
+                            'Date': booking.date,
+                            'Day': booking.day,
+                            'Time': booking.time,
+                            'Duration': booking.duration,
+                            'Players': booking.players,
+                            'Department': booking.department,
+                            'Low Time': booking.lowTime,
+                            'High Time': booking.highTime,
+                            'Total Coins': booking.totalCoins,
+                            'Coins Per Person': booking.coinsPerPerson,
+                            'DKK Per Person': booking.dkkPerPerson
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`);
+                }
+                
+                const result = await response.json();
+                showStatus('Booking saved to Airtable successfully!');
+                
+                // Add to local array and update table
+                bookings.push(booking);
+                updateBookingTable();
+                return true;
+                
             } catch (error) {
                 console.error('Error saving booking:', error);
-                showStatus('Error saving booking. Please try again.', true);
+                showStatus('Error saving booking: ' + error.message, true);
                 return false;
             }
         }
@@ -520,8 +585,8 @@
                 dkkPerPerson: parseFloat(dkkPerPerson)
             };
             
-            // Save to Google Sheet
-            const success = await saveBookingToSheet(booking);
+            // Save to Airtable
+            const success = await saveBookingToAirtable(booking);
             
             if (success) {
                 // Reset form
@@ -573,8 +638,8 @@
             document.getElementById('startTime').value = `${startHour.toString().padStart(2, '0')}:${roundedMinute}`;
             document.getElementById('endTime').value = `${(startHour + 1).toString().padStart(2, '0')}:${roundedMinute}`;
             
-            // Load existing bookings from Google Sheet
-            loadBookingsFromSheet();
+            // Load existing bookings from Airtable
+            loadBookingsFromAirtable();
         });
     </script>
 </body>
