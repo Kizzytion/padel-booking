@@ -83,6 +83,11 @@
             background: #2980b9;
         }
         
+        .calculate-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
         .results {
             background: #e8f5e8;
             border: 2px solid #27ae60;
@@ -141,125 +146,6 @@
             background-color: #e8f4fd;
         }
         
-        .clear-btn {
-            background: #e74c3c;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-        
-        .clear-btn:hover {
-            background: #c0392b;
-        }
-        
-        .manage-dept-btn {
-            background: #9b59b6;
-            color: white;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 10px;
-            font-size: 14px;
-        }
-        
-        .manage-dept-btn:hover {
-            background: #8e44ad;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        
-        .modal-content {
-            background-color: white;
-            margin: 10% auto;
-            padding: 30px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 500px;
-        }
-        
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        .close:hover {
-            color: black;
-        }
-        
-        .dept-list {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            margin: 15px 0;
-        }
-        
-        .dept-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .dept-item:last-child {
-            border-bottom: none;
-        }
-        
-        .delete-dept-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .delete-dept-btn:hover {
-            background: #c0392b;
-        }
-        
-        .add-dept-form {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .add-dept-form input {
-            flex: 1;
-        }
-        
-        .add-dept-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .add-dept-btn:hover {
-            background: #229954;
-        }
-        
         .pricing-info {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -278,6 +164,30 @@
             padding: 15px;
             border-radius: 6px;
             margin-top: 15px;
+        }
+        
+        .status-message {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            color: #6c757d;
+            font-style: italic;
         }
     </style>
 </head>
@@ -324,12 +234,20 @@
                     <label for="department">Department:</label>
                     <select id="department" required>
                         <option value="">Select Department</option>
+                        <option value="IT">IT</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Management">Management</option>
                     </select>
-                    <button type="button" class="manage-dept-btn" onclick="manageDepartments()">Manage Departments</button>
                 </div>
             </div>
             
-            <button class="calculate-btn" onclick="calculateBooking()">Calculate & Add Booking</button>
+            <button class="calculate-btn" id="submitBtn" onclick="calculateBooking()">Calculate & Add Booking</button>
+            
+            <div id="statusMessage"></div>
             
             <div id="results" class="results" style="display: none;">
                 <h3>Booking Calculation</h3>
@@ -341,7 +259,7 @@
     
     <div class="container booking-log">
         <h3>Booking History</h3>
-        <button class="clear-btn" onclick="clearLog()">Clear All Bookings</button>
+        <div id="loadingMessage" class="loading">Loading booking history...</div>
         
         <table class="log-table" id="bookingTable">
             <thead>
@@ -363,122 +281,83 @@
         </table>
     </div>
 
-    <!-- Department Management Modal -->
-    <div id="deptModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeDeptModal()">&times;</span>
-            <h2>Manage Departments</h2>
-            
-            <div class="dept-list" id="deptList">
-                <!-- Department items will be populated here -->
-            </div>
-            
-            <div class="add-dept-form">
-                <input type="text" id="newDeptName" placeholder="Enter new department name" maxlength="50">
-                <button class="add-dept-btn" onclick="addDepartment()">Add Department</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Store bookings and departments in memory
+        // IMPORTANT: Replace this URL with your actual Google Apps Script web app URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkYp4gKaGpZQdg5GfEqvmCDrT9xBknCvyavV7xkO2GCG4pj0NX7jUKbV1IMhqFs_Ai5Q/exec';
+        
+        // Store bookings array
         let bookings = [];
-        let departments = ['IT', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations', 'Management'];
         
-        function loadDepartments() {
-            const deptSelect = document.getElementById('department');
-            deptSelect.innerHTML = '<option value="">Select Department</option>';
-            
-            departments.forEach(dept => {
-                const option = document.createElement('option');
-                option.value = dept;
-                option.textContent = dept;
-                deptSelect.appendChild(option);
-            });
+        function showStatus(message, isError = false) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = `<div class="status-message ${isError ? 'status-error' : 'status-success'}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
         }
         
-        function manageDepartments() {
-            updateDeptList();
-            document.getElementById('deptModal').style.display = 'block';
+        function setLoading(isLoading) {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = isLoading;
+            btn.textContent = isLoading ? 'Saving...' : 'Calculate & Add Booking';
         }
         
-        function closeDeptModal() {
-            document.getElementById('deptModal').style.display = 'none';
-        }
-        
-        function updateDeptList() {
-            const deptList = document.getElementById('deptList');
-            deptList.innerHTML = '';
-            
-            departments.forEach((dept, index) => {
-                const deptItem = document.createElement('div');
-                deptItem.className = 'dept-item';
-                deptItem.innerHTML = `
-                    <span>${dept}</span>
-                    <button class="delete-dept-btn" onclick="deleteDepartment(${index})">Delete</button>
-                `;
-                deptList.appendChild(deptItem);
-            });
-        }
-        
-        function addDepartment() {
-            const newDeptName = document.getElementById('newDeptName').value.trim();
-            
-            if (!newDeptName) {
-                alert('Please enter a department name');
-                return;
-            }
-            
-            if (departments.includes(newDeptName)) {
-                alert('Department already exists');
-                return;
-            }
-            
-            departments.push(newDeptName);
-            loadDepartments();
-            updateDeptList();
-            document.getElementById('newDeptName').value = '';
-        }
-        
-        function deleteDepartment(index) {
-            if (confirm(`Are you sure you want to delete "${departments[index]}"?`)) {
-                departments.splice(index, 1);
-                loadDepartments();
-                updateDeptList();
-            }
-        }
-        
-        // Close modal when clicking outside of it
-        window.onclick = function(event) {
-            const modal = document.getElementById('deptModal');
-            if (event.target == modal) {
-                closeDeptModal();
-            }
-        }
-        
-        // Allow Enter key to add department
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('newDeptName').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    addDepartment();
+        async function loadBookingsFromSheet() {
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    bookings = data;
+                    updateBookingTable();
+                    document.getElementById('loadingMessage').style.display = 'none';
+                } else {
+                    console.error('Unexpected data format:', data);
+                    document.getElementById('loadingMessage').textContent = 'Error loading booking history';
                 }
-            });
-        });
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                document.getElementById('loadingMessage').textContent = 'Error loading booking history';
+            }
+        }
+        
+        async function saveBookingToSheet(booking) {
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(booking)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Booking saved successfully!');
+                    // Add to local array and update table
+                    bookings.push(booking);
+                    updateBookingTable();
+                    return true;
+                } else {
+                    showStatus('Error saving booking: ' + (result.error || 'Unknown error'), true);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error saving booking:', error);
+                showStatus('Error saving booking. Please try again.', true);
+                return false;
+            }
+        }
         
         function timeToMinutes(timeStr) {
             const [hours, minutes] = timeStr.split(':').map(Number);
             return hours * 60 + minutes;
         }
         
-        function minutesToTime(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-        }
-        
         function getDayOfWeek(dateString) {
             const date = new Date(dateString);
-            return date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+            return date.getDay();
         }
         
         function calculateTimeSlots(startTime, endTime, bookingDate) {
@@ -486,55 +365,43 @@
             const endMinutes = timeToMinutes(endTime);
             const dayOfWeek = getDayOfWeek(bookingDate);
             
-            // Handle overnight bookings
             const totalMinutes = endMinutes > startMinutes ? 
                 endMinutes - startMinutes : 
                 (24 * 60 - startMinutes) + endMinutes;
             
             let lowTimeMinutes = 0;
             let highTimeMinutes = 0;
-            
             let currentMinutes = startMinutes;
             let remainingMinutes = totalMinutes;
             
             while (remainingMinutes > 0) {
                 const currentHour = Math.floor(currentMinutes / 60);
-                
                 let isLowTime;
                 let minutesToNextBoundary;
                 
                 if (dayOfWeek === 6) { // Saturday
-                    // Saturday: Low 05:00-07:00, High 07:00-18:00
                     isLowTime = (currentHour >= 5 && currentHour < 7);
                     
                     if (currentHour >= 5 && currentHour < 7) {
-                        // In low time, next boundary is 07:00
                         minutesToNextBoundary = (7 * 60) - currentMinutes;
                     } else if (currentHour >= 7 && currentHour < 18) {
-                        // In high time, next boundary is 18:00
                         minutesToNextBoundary = (18 * 60) - currentMinutes;
                     } else if (currentHour >= 18) {
-                        // After 18:00 on Saturday (closed or treat as high time)
                         minutesToNextBoundary = (24 * 60) - currentMinutes;
-                        isLowTime = false; // Treat as high time if still open
+                        isLowTime = false;
                     } else {
-                        // Before 05:00 (closed)
                         minutesToNextBoundary = (5 * 60) - currentMinutes;
-                        isLowTime = true; // Default to low
+                        isLowTime = true;
                     }
                     
                 } else if (dayOfWeek === 0) { // Sunday
-                    // Sunday: Low 05:00-07:00, High 07:00-23:30
                     isLowTime = (currentHour >= 5 && currentHour < 7);
                     
                     if (currentHour >= 5 && currentHour < 7) {
-                        // In low time, next boundary is 07:00
                         minutesToNextBoundary = (7 * 60) - currentMinutes;
                     } else if (currentHour >= 7 && (currentHour < 23 || (currentHour === 23 && currentMinutes < 30))) {
-                        // In high time, next boundary is 23:30
                         minutesToNextBoundary = (23 * 60 + 30) - currentMinutes;
                     } else {
-                        // After 23:30 Sunday or before 05:00 (closed/low time)
                         if (currentHour >= 23 && currentMinutes >= 30) {
                             minutesToNextBoundary = (24 * 60) - currentMinutes;
                         } else {
@@ -543,21 +410,16 @@
                         isLowTime = true;
                     }
                     
-                } else { // Weekdays (Monday-Friday)
-                    // Weekdays: Low 05:00-16:00 & 23:00-00:00, High 16:00-23:00
+                } else { // Weekdays
                     isLowTime = (currentHour >= 5 && currentHour < 16) || (currentHour >= 23);
                     
                     if (currentHour >= 5 && currentHour < 16) {
-                        // In morning low time, next boundary is 16:00
                         minutesToNextBoundary = (16 * 60) - currentMinutes;
                     } else if (currentHour >= 16 && currentHour < 23) {
-                        // In high time, next boundary is 23:00
                         minutesToNextBoundary = (23 * 60) - currentMinutes;
                     } else if (currentHour >= 23) {
-                        // In evening low time, next boundary is midnight (24:00)
                         minutesToNextBoundary = (24 * 60) - currentMinutes;
                     } else {
-                        // Between midnight and 5:00 (closed time, but treat as low for calculation)
                         minutesToNextBoundary = (5 * 60) - currentMinutes;
                     }
                 }
@@ -577,7 +439,7 @@
             return { lowTimeMinutes, highTimeMinutes, totalMinutes };
         }
         
-        function calculateBooking() {
+        async function calculateBooking() {
             const bookingDate = document.getElementById('bookingDate').value;
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
@@ -585,28 +447,26 @@
             const department = document.getElementById('department').value;
             
             if (!bookingDate || !startTime || !endTime || !players || !department) {
-                alert('Please fill in all fields');
+                showStatus('Please fill in all fields', true);
                 return;
             }
             
             if (players < 4) {
-                alert('Minimum 4 players required');
+                showStatus('Minimum 4 players required', true);
                 return;
             }
+            
+            setLoading(true);
             
             const timeSlots = calculateTimeSlots(startTime, endTime, bookingDate);
             const dayOfWeek = getDayOfWeek(bookingDate);
             const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
             
-            // Calculate coins (60 coins per 30 minutes for low time, 120 for high time)
             const lowTimeCoins = Math.ceil(timeSlots.lowTimeMinutes / 30) * 60;
             const highTimeCoins = Math.ceil(timeSlots.highTimeMinutes / 30) * 120;
             const totalCoins = lowTimeCoins + highTimeCoins;
-            
-            // Calculate cost (12,000 coins = 8,000 DKK)
             const coinsPerPerson = Math.ceil(totalCoins / players);
             const dkkPerPerson = (coinsPerPerson * 8000 / 12000).toFixed(2);
-            const totalDKK = (totalCoins * 8000 / 12000).toFixed(2);
             
             // Display results
             const resultsDiv = document.getElementById('results');
@@ -641,18 +501,14 @@
                     <span>Cost per Person:</span>
                     <span>${dkkPerPerson} DKK</span>
                 </div>
-                <div class="result-item">
-                    <span>Total Cost:</span>
-                    <span>${totalDKK} DKK</span>
-                </div>
             `;
             
             resultsDiv.style.display = 'block';
             
-            // Add to booking log
+            // Prepare booking data
             const booking = {
                 date: bookingDate,
-                dayName: dayName,
+                day: dayName,
                 time: `${startTime}-${endTime}`,
                 duration: `${(timeSlots.totalMinutes/60).toFixed(1)}h`,
                 players: players,
@@ -661,17 +517,23 @@
                 highTime: `${(timeSlots.highTimeMinutes/60).toFixed(1)}h`,
                 totalCoins: totalCoins,
                 coinsPerPerson: coinsPerPerson,
-                dkkPerPerson: dkkPerPerson
+                dkkPerPerson: parseFloat(dkkPerPerson)
             };
             
-            bookings.push(booking);
-            updateBookingTable();
+            // Save to Google Sheet
+            const success = await saveBookingToSheet(booking);
             
-            // Reset form except date
-            document.getElementById('startTime').value = '';
-            document.getElementById('endTime').value = '';
-            document.getElementById('players').value = '4';
-            document.getElementById('department').value = '';
+            if (success) {
+                // Reset form
+                document.getElementById('bookingDate').value = '';
+                document.getElementById('startTime').value = '';
+                document.getElementById('endTime').value = '';
+                document.getElementById('players').value = '4';
+                document.getElementById('department').value = '';
+                resultsDiv.style.display = 'none';
+            }
+            
+            setLoading(false);
         }
         
         function updateBookingTable() {
@@ -681,7 +543,7 @@
             bookings.forEach(booking => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td>${booking.date} (${booking.dayName})</td>
+                    <td>${booking.date} (${booking.day})</td>
                     <td>${booking.time}</td>
                     <td>${booking.duration}</td>
                     <td>${booking.players}</td>
@@ -695,18 +557,8 @@
             });
         }
         
-        function clearLog() {
-            if (confirm('Are you sure you want to clear all booking history?')) {
-                bookings = [];
-                updateBookingTable();
-            }
-        }
-        
-        // Set default times for testing
+        // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
-            // Load departments first
-            loadDepartments();
-            
             // Set today's date as default
             const today = new Date();
             document.getElementById('bookingDate').value = today.toISOString().split('T')[0];
@@ -721,12 +573,8 @@
             document.getElementById('startTime').value = `${startHour.toString().padStart(2, '0')}:${roundedMinute}`;
             document.getElementById('endTime').value = `${(startHour + 1).toString().padStart(2, '0')}:${roundedMinute}`;
             
-            // Add Enter key listener for department input
-            document.getElementById('newDeptName').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    addDepartment();
-                }
-            });
+            // Load existing bookings from Google Sheet
+            loadBookingsFromSheet();
         });
     </script>
 </body>
